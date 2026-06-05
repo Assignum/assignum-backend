@@ -1,24 +1,9 @@
-import logger from 'jet-logger';
+import 'module-alias/register';
 
-import EnvVars from './common/constants/env';
-import server from './server';
+import app from './app';
 
-/******************************************************************************
-                                Constants
-******************************************************************************/
+const PORT = Number(process.env.PORT) || 3000;
 
-const SERVER_START_MESSAGE =
-  'Express server started on port: ' + EnvVars.Port.toString();
-
-/******************************************************************************
-                                  Run
-******************************************************************************/
-
-// Start the server
-server.listen(EnvVars.Port, (err) => {
-  if (!!err) {
-    logger.err(err.message);
-  } else {
-    logger.info(SERVER_START_MESSAGE);
-  }
+app.listen(PORT, () => {
+  console.log(`[server] Assignum backend running on port ${PORT}`);
 });
