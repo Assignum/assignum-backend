@@ -18,7 +18,7 @@ export const acceptInvitation = async (
   }
 
   const profile = await userRepo.findByUid(uid);
-  const fullName = profile?.fullName ?? email;
+  const fullName = profile?.fullName || email;
 
   const updatedInvited = activity.invitedEmails.filter((e) => e !== email);
   const updatedAccepted = [...activity.acceptedEmails, email];

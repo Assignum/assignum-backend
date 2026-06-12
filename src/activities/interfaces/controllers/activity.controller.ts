@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { validate } from '@src/shared/validation/validate';
+import { FirestoreUserProfileRepository } from '@src/iam/infrastructure/repositories/firestore-user-profile.repository';
 
 import { createActivity } from '../../application/use-cases/create-activity.use-case';
 import { deleteActivity } from '../../application/use-cases/delete-activity.use-case';
@@ -12,9 +13,10 @@ import { FirestoreActivityRepository } from '../../infrastructure/repositories/f
 import { createActivitySchema, updateActivitySchema } from '../schemas/activity.schema';
 
 const repo = new FirestoreActivityRepository();
+const userRepo = new FirestoreUserProfileRepository();
 
 export const listActivities = async (req: Request, res: Response): Promise<void> => {
-  const activities = await getActivities(repo, req.uid, req.email);
+  const activities = await getActivities(repo, userRepo, req.uid, req.email);
   res.json(activities);
 };
 
@@ -26,7 +28,7 @@ export const createActivityHandler = async (req: Request, res: Response): Promis
 
 export const getActivityHandler = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params as { id: string };
-  const activity = await getActivity(repo, id, req.uid, req.email);
+  const activity = await getActivity(repo, userRepo, id, req.uid, req.email);
   res.json(activity);
 };
 

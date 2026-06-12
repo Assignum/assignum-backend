@@ -40,6 +40,7 @@ const Activity = {
   properties: {
     id: { type: 'string' },
     uid: { type: 'string', description: 'UID del líder (creador)' },
+    leaderName: { type: 'string', description: 'Nombre completo del líder (resuelto en tiempo de consulta)' },
     name: { type: 'string' },
     dueDate: { type: 'string', description: 'ISO date string' },
     documentLink: { type: 'string', nullable: true },

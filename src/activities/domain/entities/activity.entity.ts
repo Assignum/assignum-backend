@@ -23,6 +23,11 @@ export interface Activity {
   finalized: boolean;
 }
 
+export interface ActivityResponse extends Activity {
+  leaderName: string;
+  memberNames: Record<string, string>;
+}
+
 export const computeProgress = (tasks: ActivityTask[]): number => {
   if (tasks.length === 0) return 0;
   const verified = tasks.filter((t) => t.status === 'Verificado').length;
