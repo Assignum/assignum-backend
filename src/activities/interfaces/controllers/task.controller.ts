@@ -34,7 +34,7 @@ export const deleteTaskHandler = async (req: Request, res: Response): Promise<vo
 
 export const assignTasksHandler = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params as { id: string };
-  await assignTasks(repo, id, req.uid);
+  await assignTasks(repo, id, req.uid, req.email);
   res.json({ message: 'Tasks assigned via round-robin' });
 };
 
