@@ -16,8 +16,9 @@ export const getActivity = async (
 
   const isLeader = activity.uid === uid;
   const isMember = activity.acceptedEmails.includes(email);
+  const isInvited = activity.invitedEmails.includes(email);
 
-  if (!isLeader && !isMember) {
+  if (!isLeader && !isMember && !isInvited) {
     throw new AppError('Access denied', 403, 'FORBIDDEN');
   }
 
@@ -47,6 +48,7 @@ export const getActivity = async (
 
   if (isLeader) return base;
 
+  // Accepted members and pre-assigned invited members see only their tasks
   return {
     ...base,
     tasks: activity.tasks.filter((t) => t.assignedToEmail === email),
