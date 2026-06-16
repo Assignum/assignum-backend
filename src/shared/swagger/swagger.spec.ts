@@ -73,8 +73,8 @@ const spec = {
       'Obtén el `idToken` desde `POST /api/auth/login` o `POST /api/auth/register`.',
   },
   servers: [
-    { url: 'http://localhost:3000', description: 'Local' },
     { url: 'https://assignum-backend.onrender.com', description: 'Render (producción)' },
+    { url: 'http://localhost:3000', description: 'Local' },
   ],
   tags: [
     { name: 'Health' },
