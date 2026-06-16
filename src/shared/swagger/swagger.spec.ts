@@ -74,7 +74,7 @@ const spec = {
   },
   servers: [
     { url: 'http://localhost:3000', description: 'Local' },
-    { url: 'https://tu-app.onrender.com', description: 'Render (producción)' },
+    { url: 'https://assignum-backend.onrender.com', description: 'Render (producción)' },
   ],
   tags: [
     { name: 'Health' },
