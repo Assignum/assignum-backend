@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-const disponibilidadEnum = z.enum(['Mañana', 'Tarde', 'Noche', 'Fin de semana']);
 const lastRoleEnum = z.enum([
   'Backend',
   'Frontend',
@@ -14,7 +13,6 @@ const skill = () => z.number().int().min(1).max(5);
 export const createProfileSchema = z.object({
   fullName: z.string().min(1, 'fullName is required'),
   birthDate: z.string().nullable().optional(),
-  disponibilidad: disponibilidadEnum,
   // Competencias Técnicas
   backendSkill: skill(),
   frontendSkill: skill(),

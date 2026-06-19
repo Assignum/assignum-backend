@@ -11,7 +11,6 @@ export interface UserProfile {
   email: string;
   fullName: string;
   birthDate: string | null;
-  disponibilidad: 'Mañana' | 'Tarde' | 'Noche' | 'Fin de semana';
   // Competencias Técnicas (1–5)
   backendSkill: number;
   frontendSkill: number;

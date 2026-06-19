@@ -14,7 +14,6 @@ const UserProfile = {
     email: { type: 'string' },
     fullName: { type: 'string' },
     birthDate: { type: 'string', nullable: true },
-    disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
     // Competencias Técnicas
     backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
     frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
@@ -232,7 +231,7 @@ const spec = {
               schema: {
                 type: 'object',
                 required: [
-                  'fullName', 'disponibilidad',
+                  'fullName',
                   'backendSkill', 'frontendSkill', 'databaseSkill', 'testingSkill', 'documentationSkill', 'gitGithubSkill', 'agileMethodologiesSkill',
                   'teamworkSkill', 'communicationSkill', 'leadershipSkill', 'organizationSkill',
                   'projectsCompleted', 'availableHoursPerWeek', 'lastRole', 'lastRolePerformance', 'peerEvaluation',
@@ -240,7 +239,6 @@ const spec = {
                 properties: {
                   fullName: { type: 'string', example: 'Juan Pérez' },
                   birthDate: { type: 'string', nullable: true, example: '2003-05-15' },
-                  disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
                   // Competencias Técnicas
                   backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
                   frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
@@ -283,7 +281,6 @@ const spec = {
                 properties: {
                   fullName: { type: 'string' },
                   birthDate: { type: 'string', nullable: true },
-                  disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
                   // Competencias Técnicas
                   backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
                   frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
