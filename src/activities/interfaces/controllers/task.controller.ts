@@ -15,7 +15,7 @@ const repo = new FirestoreActivityRepository();
 export const addTasksHandler = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params as { id: string };
   const { tasks } = validate(addTasksSchema, req.body);
-  const newTasks = await addTasks(repo, id, req.uid, tasks.map((t) => t.name));
+  const newTasks = await addTasks(repo, id, req.uid, tasks);
   res.status(201).json(newTasks);
 };
 

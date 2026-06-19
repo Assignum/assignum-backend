@@ -1,4 +1,7 @@
 export type TaskStatus = 'Pendiente' | 'En Progreso' | 'Entregado' | 'Verificado';
+export type TaskType = 'Backend' | 'Frontend' | 'Testing' | 'Database' | 'Documentation' | 'Management';
+export type TaskComplexity = 'Low' | 'Medium' | 'High';
+export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export interface ActivityTask {
   id: string;
@@ -8,6 +11,10 @@ export interface ActivityTask {
   comments: string;
   files: string[];
   links: string[];
+  taskType: TaskType;
+  taskComplexity: TaskComplexity;
+  priority: TaskPriority;
+  estimatedHours: number;
 }
 
 export interface Activity {

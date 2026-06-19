@@ -15,10 +15,25 @@ const UserProfile = {
     fullName: { type: 'string' },
     birthDate: { type: 'string', nullable: true },
     disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
-    cargaAcademica: { type: 'string', enum: ['Ligera', 'Media', 'Alta'] },
-    trabajoEnEquipo: { type: 'integer', minimum: 1, maximum: 5 },
-    comunicacion: { type: 'integer', minimum: 1, maximum: 5 },
-    horasEstudio: { type: 'number', minimum: 0, maximum: 60 },
+    // Competencias Técnicas
+    backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
+    frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
+    databaseSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Bases de Datos' },
+    testingSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Testing / QA' },
+    documentationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Documentación técnica' },
+    gitGithubSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Git / Control de versiones' },
+    agileMethodologiesSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Metodologías Ágiles (Scrum, Kanban)' },
+    // Competencias Colaborativas
+    teamworkSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Trabajo en equipo' },
+    communicationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Comunicación' },
+    leadershipSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Liderazgo' },
+    organizationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Organización y planificación' },
+    // Experiencia y Disponibilidad
+    projectsCompleted: { type: 'integer', minimum: 0, maximum: 50, description: 'Proyectos académicos o personales completados' },
+    availableHoursPerWeek: { type: 'integer', minimum: 1, maximum: 40, description: 'Horas disponibles por semana' },
+    lastRole: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Último rol desempeñado en un proyecto grupal' },
+    lastRolePerformance: { type: 'integer', minimum: 1, maximum: 5, description: 'Autoevaluación de desempeño en ese último rol' },
+    peerEvaluation: { type: 'integer', minimum: 1, maximum: 5, description: 'Promedio de evaluaciones recibidas de compañeros' },
   },
 };
 
@@ -32,6 +47,10 @@ const ActivityTask = {
     comments: { type: 'string' },
     files: { type: 'array', items: { type: 'string' } },
     links: { type: 'array', items: { type: 'string' } },
+    taskType: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Categoría principal de la tarea' },
+    taskComplexity: { type: 'string', enum: ['Low', 'Medium', 'High'], description: 'Nivel de complejidad estimado' },
+    priority: { type: 'string', enum: ['Low', 'Medium', 'High'], description: 'Prioridad dentro del proyecto' },
+    estimatedHours: { type: 'integer', minimum: 1, maximum: 100, description: 'Horas estimadas para completar la tarea' },
   },
 };
 
@@ -212,15 +231,35 @@ const spec = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['fullName', 'disponibilidad', 'cargaAcademica', 'trabajoEnEquipo', 'comunicacion', 'horasEstudio'],
+                required: [
+                  'fullName', 'disponibilidad',
+                  'backendSkill', 'frontendSkill', 'databaseSkill', 'testingSkill', 'documentationSkill', 'gitGithubSkill', 'agileMethodologiesSkill',
+                  'teamworkSkill', 'communicationSkill', 'leadershipSkill', 'organizationSkill',
+                  'projectsCompleted', 'availableHoursPerWeek', 'lastRole', 'lastRolePerformance', 'peerEvaluation',
+                ],
                 properties: {
                   fullName: { type: 'string', example: 'Juan Pérez' },
                   birthDate: { type: 'string', nullable: true, example: '2003-05-15' },
                   disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
-                  cargaAcademica: { type: 'string', enum: ['Ligera', 'Media', 'Alta'] },
-                  trabajoEnEquipo: { type: 'integer', minimum: 1, maximum: 5 },
-                  comunicacion: { type: 'integer', minimum: 1, maximum: 5 },
-                  horasEstudio: { type: 'number', minimum: 0, maximum: 60 },
+                  // Competencias Técnicas
+                  backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
+                  frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
+                  databaseSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Bases de Datos' },
+                  testingSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Testing / QA' },
+                  documentationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Documentación técnica' },
+                  gitGithubSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Git / Control de versiones' },
+                  agileMethodologiesSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Metodologías Ágiles (Scrum, Kanban)' },
+                  // Competencias Colaborativas
+                  teamworkSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Trabajo en equipo' },
+                  communicationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Comunicación' },
+                  leadershipSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Liderazgo' },
+                  organizationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Organización y planificación' },
+                  // Experiencia y Disponibilidad
+                  projectsCompleted: { type: 'integer', minimum: 0, maximum: 50, description: 'Proyectos académicos o personales completados' },
+                  availableHoursPerWeek: { type: 'integer', minimum: 1, maximum: 40, description: 'Horas disponibles por semana' },
+                  lastRole: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Último rol desempeñado en un proyecto grupal' },
+                  lastRolePerformance: { type: 'integer', minimum: 1, maximum: 5, description: 'Autoevaluación de desempeño en ese último rol' },
+                  peerEvaluation: { type: 'integer', minimum: 1, maximum: 5, description: 'Promedio de evaluaciones recibidas de compañeros' },
                 },
               },
             },
@@ -245,10 +284,25 @@ const spec = {
                   fullName: { type: 'string' },
                   birthDate: { type: 'string', nullable: true },
                   disponibilidad: { type: 'string', enum: ['Mañana', 'Tarde', 'Noche', 'Fin de semana'] },
-                  cargaAcademica: { type: 'string', enum: ['Ligera', 'Media', 'Alta'] },
-                  trabajoEnEquipo: { type: 'integer', minimum: 1, maximum: 5 },
-                  comunicacion: { type: 'integer', minimum: 1, maximum: 5 },
-                  horasEstudio: { type: 'number', minimum: 0, maximum: 60 },
+                  // Competencias Técnicas
+                  backendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Backend' },
+                  frontendSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Desarrollo Frontend' },
+                  databaseSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Bases de Datos' },
+                  testingSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Testing / QA' },
+                  documentationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Documentación técnica' },
+                  gitGithubSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Git / Control de versiones' },
+                  agileMethodologiesSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Metodologías Ágiles (Scrum, Kanban)' },
+                  // Competencias Colaborativas
+                  teamworkSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Trabajo en equipo' },
+                  communicationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Comunicación' },
+                  leadershipSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Liderazgo' },
+                  organizationSkill: { type: 'integer', minimum: 1, maximum: 5, description: 'Organización y planificación' },
+                  // Experiencia y Disponibilidad
+                  projectsCompleted: { type: 'integer', minimum: 0, maximum: 50, description: 'Proyectos académicos o personales completados' },
+                  availableHoursPerWeek: { type: 'integer', minimum: 1, maximum: 40, description: 'Horas disponibles por semana' },
+                  lastRole: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Último rol desempeñado en un proyecto grupal' },
+                  lastRolePerformance: { type: 'integer', minimum: 1, maximum: 5, description: 'Autoevaluación de desempeño en ese último rol' },
+                  peerEvaluation: { type: 'integer', minimum: 1, maximum: 5, description: 'Promedio de evaluaciones recibidas de compañeros' },
                 },
               },
             },
@@ -383,7 +437,28 @@ const spec = {
           required: true,
           content: {
             'application/json': {
-              schema: { type: 'object', required: ['tasks'], properties: { tasks: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' } } }, example: [{ name: 'Nueva tarea' }] } } },
+              schema: {
+                type: 'object',
+                required: ['tasks'],
+                properties: {
+                  tasks: {
+                    type: 'array',
+                    minItems: 1,
+                    items: {
+                      type: 'object',
+                      required: ['name', 'taskType', 'taskComplexity', 'priority', 'estimatedHours'],
+                      properties: {
+                        name: { type: 'string', example: 'Implementar endpoint de login' },
+                        taskType: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Categoría principal de la tarea' },
+                        taskComplexity: { type: 'string', enum: ['Low', 'Medium', 'High'], description: 'Nivel de complejidad estimado' },
+                        priority: { type: 'string', enum: ['Low', 'Medium', 'High'], description: 'Prioridad dentro del proyecto' },
+                        estimatedHours: { type: 'integer', minimum: 1, maximum: 100, description: 'Horas estimadas para completar la tarea' },
+                      },
+                    },
+                    example: [{ name: 'Implementar endpoint de login', taskType: 'Backend', taskComplexity: 'Medium', priority: 'High', estimatedHours: 10 }],
+                  },
+                },
+              },
             },
           },
         },
