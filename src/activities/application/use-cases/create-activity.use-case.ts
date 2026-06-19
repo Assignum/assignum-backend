@@ -23,6 +23,10 @@ export const createActivity = async (
     comments: '',
     files: [],
     links: [],
+    taskType: 'Management',
+    taskComplexity: 'Low',
+    priority: 'Low',
+    estimatedHours: 1,
   }));
 
   const activity: Activity = {
