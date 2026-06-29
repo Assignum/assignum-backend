@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { validate } from '@src/shared/validation/validate';
+import { FirestoreUserProfileRepository } from '@src/iam/infrastructure/repositories/firestore-user-profile.repository';
 
 import { addTasks } from '../../application/use-cases/add-tasks.use-case';
 import { assignTasks } from '../../application/use-cases/assign-tasks.use-case';
@@ -11,6 +12,7 @@ import { FirestoreActivityRepository } from '../../infrastructure/repositories/f
 import { addTasksSchema, updateTaskSchema } from '../schemas/task.schema';
 
 const repo = new FirestoreActivityRepository();
+const profileRepo = new FirestoreUserProfileRepository();
 
 export const addTasksHandler = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params as { id: string };
@@ -34,8 +36,8 @@ export const deleteTaskHandler = async (req: Request, res: Response): Promise<vo
 
 export const assignTasksHandler = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params as { id: string };
-  await assignTasks(repo, id, req.uid, req.email);
-  res.json({ message: 'Tasks assigned via round-robin' });
+  await assignTasks(repo, profileRepo, id, req.uid, req.email);
+  res.json({ message: 'Tasks assigned via ML recommendation' });
 };
 
 export const verifyTaskHandler = async (req: Request, res: Response): Promise<void> => {
