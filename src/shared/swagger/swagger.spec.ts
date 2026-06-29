@@ -469,11 +469,15 @@ const spec = {
     '/api/activities/{id}/tasks/assign': {
       post: {
         tags: ['Tasks'],
-        summary: 'Asignar tareas round-robin entre miembros aceptados (solo líder)',
+        summary: 'Asignar tareas mediante ML (solo líder)',
+        description:
+          'Llama al servicio de ML por cada tarea no asignada para recomendar el miembro más apto según sus competencias y el tipo/complejidad de la tarea.\n\n' +
+          'Las tareas ya asignadas al líder o a miembros aceptados se conservan. ' +
+          'Si el servicio ML no está disponible, se aplica round-robin como fallback.',
         security: [{ bearerAuth: [] }],
         parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
         responses: {
-          200: { description: 'Tareas asignadas' },
+          200: { description: 'Tareas asignadas por ML', content: { 'application/json': { schema: { type: 'object', properties: { message: { type: 'string', example: 'Tasks assigned via ML recommendation' } } } } } },
           400: { $ref: '#/components/responses/BadRequest' },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
