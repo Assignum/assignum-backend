@@ -31,10 +31,17 @@ const toMlStudent = (email: string, profile: UserProfile | null) => ({
   peerEvaluation: profile?.peerEvaluation || 1,
 });
 
-export const recommendStudent = async (
+export interface MlRankingEntry {
+  name: string;
+  success_probability: number;
+  prediction: string;
+  rank: number;
+}
+
+export const getRanking = async (
   task: Pick<ActivityTask, 'taskType' | 'taskComplexity' | 'priority' | 'estimatedHours'>,
   memberProfiles: Array<{ email: string; profile: UserProfile | null }>,
-): Promise<string> => {
+): Promise<MlRankingEntry[]> => {
   const students = memberProfiles.map(({ email, profile }) => toMlStudent(email, profile));
 
   const res = await axios.post<MlResponse>(ML_URL, {
@@ -47,5 +54,5 @@ export const recommendStudent = async (
     students,
   });
 
-  return res.data.recommended_student;
+  return res.data.ranking;
 };
