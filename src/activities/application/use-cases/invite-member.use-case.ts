@@ -1,7 +1,8 @@
+import admin from '@src/shared/infrastructure/firebase/firebase-admin';
+import { IUserProfileRepository } from '@src/iam/domain/repositories/user-profile.repository';
 import { AppError } from '@src/shared/errors/app-error';
 
 import { IActivityRepository } from '../../domain/repositories/activity.repository';
-import { IUserProfileRepository } from '@src/iam/domain/repositories/user-profile.repository';
 
 export const inviteMember = async (
   activityRepo: IActivityRepository,
@@ -24,4 +25,32 @@ export const inviteMember = async (
   await activityRepo.update(activityId, {
     invitedEmails: [...activity.invitedEmails, inviteEmail],
   });
+
+  // Obtener nombre del líder para la notificación
+  const leaderProfile = await userRepo.findByUid(leaderUid);
+  const leaderName = leaderProfile?.fullName || 'Tu líder';
+
+  // Buscar fcmToken del usuario invitado y enviar push notification
+  const usersSnap = await admin.firestore()
+    .collection('users')
+    .where('email', '==', inviteEmail)
+    .limit(1)
+    .get();
+
+  if (!usersSnap.empty) {
+    const fcmToken = usersSnap.docs[0].data().fcmToken as string | undefined;
+    if (fcmToken) {
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: {
+          title: '¡Nueva invitación!',
+          body: `${leaderName} te invitó a "${activity.name}"`,
+        },
+        data: { type: 'invitation', activityId },
+        android: {
+          notification: { channelId: 'default', priority: 'high' },
+        },
+      });
+    }
+  }
 };
