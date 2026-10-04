@@ -6,7 +6,10 @@
     "dev": "cross-env DOTENV_CONFIG_PATH=./config/.env.development nodemon --exec \"ts-node ./src/main\" --watch ./src --ext .ts",
     "build": "shx rm -rf dist && tsc --project tsconfig.prod.json",
     "start": "cross-env DOTENV_CONFIG_PATH=./config/.env.production node -r dotenv/config -r module-alias/register ./dist/main.js",
-    "type-check": "tsc -b --noEmit"
+    "type-check": "tsc -b --noEmit",
+    "clu:build": "node scripts/clu/build-project.js",
+    "clu:deploy": "node scripts/clu/deploy.js",
+    "clu:test": "node scripts/clu/test.js"
   },
   "engines": {
     "node": ">=18.0.0"

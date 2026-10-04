@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { FirestoreActivityRepository } from '@src/activities/infrastructure/repositories/firestore-activity.repository';
 import { validate } from '@src/shared/validation/validate';
 
 import { deleteHistory } from '../../application/use-cases/delete-history.use-case';
@@ -9,10 +10,11 @@ import { FirestoreChatRepository } from '../../infrastructure/repositories/fires
 import { sendMessageSchema } from '../schemas/chat.schema';
 
 const repo = new FirestoreChatRepository();
+const activityRepo = new FirestoreActivityRepository();
 
 export const sendMessageHandler = async (req: Request, res: Response): Promise<void> => {
   const { message } = validate(sendMessageSchema, req.body);
-  const reply = await sendMessage(repo, req.uid, message);
+  const reply = await sendMessage(repo, { activityRepo, uid: req.uid, email: req.email }, message);
   res.json({ reply });
 };
 

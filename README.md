@@ -97,8 +97,30 @@ npm run start
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Full service account JSON as string |
 | `FIREBASE_API_KEY` | Firebase Web API Key |
 | `CLIENT_ORIGIN` | Flutter app origin for CORS (optional, defaults to `*`) |
+| `AZURE_LANGUAGE_ENDPOINT` | Azure AI Language endpoint (optional, enables CLU) |
+| `AZURE_LANGUAGE_KEY` | Azure AI Language key (optional, enables CLU) |
+| `CLU_PROJECT_NAME` | CLU project name (defaults to `assignum-assistant`) |
+| `CLU_DEPLOYMENT_NAME` | CLU deployment name (defaults to `production`) |
 
 5. Add a **Health Check Path:** `/health`
+
+---
+
+## Chat Assistant (Azure CLU)
+
+`POST /api/chat/message` sends the message to an Azure CLU model to detect the intent:
+
+- **Actions:** `CrearTarea` (leader only), `TareasPendientes`, `EstadoActividad` — run against the user's activities.
+- **Help:** the FAQ intents in `src/chatbox/infrastructure/services/chatbot.service.ts`.
+
+If CLU is not configured, fails, or confidence is below 0.7, the keyword rules are used instead.
+
+Training data lives in `scripts/clu/utterances.js`. With the Azure variables in `config/.env.development`:
+
+```bash
+npm run clu:deploy   # import + train (advanced, Spanish) + deploy
+npm run clu:test -- "qué tareas tengo pendientes"
+```
 
 ---
 
