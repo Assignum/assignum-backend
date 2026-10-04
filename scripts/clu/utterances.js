@@ -86,6 +86,12 @@ const INTENTS = {
     'cuéntame sobre assignum',
     'cómo funciona assignum',
     'en qué me ayuda assignum',
+    // Capitalized variants: otherwise "Assignum" is mistaken for an activity name.
+    '¿Qué es Assignum?',
+    'Qué es Assignum',
+    'Para qué sirve Assignum?',
+    'Cómo funciona Assignum',
+    'Qué hace Assignum',
   ],
   AyudaCrearActividad: [
     'cómo creo una actividad',
