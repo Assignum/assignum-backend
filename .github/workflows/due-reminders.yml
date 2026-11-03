@@ -1,0 +1,57 @@
+name: Recordatorios de fecha límite
+
+# Llama cada hora al endpoint de recordatorios del backend. En Render gratis el servidor se
+# duerme, así que primero se despierta con /health y luego se dispara el job.
+#
+# Requiere en Settings → Secrets and variables → Actions:
+#   CRON_SECRET  mismo valor que la variable CRON_SECRET del backend en Render
+#   BACKEND_URL  p. ej. https://assignum-backend.onrender.com (sin "/" al final)
+
+on:
+  schedule:
+    # Minuto 17 de cada hora (UTC): evita la hora en punto, cuando GitHub tiene más carga
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: due-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Despertar el backend
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          if [ -z "$BACKEND_URL" ]; then echo "::error::Falta el secreto BACKEND_URL"; exit 1; fi
+          for i in 1 2 3 4; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$BACKEND_URL/health" || true)
+            echo "Intento $i: /health respondió $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 20
+          done
+          echo "::error::El backend no respondió en /health"
+          exit 1
+
+      - name: Enviar recordatorios
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "::error::Falta el secreto CRON_SECRET"; exit 1; fi
+          for i in 1 2 3; do
+            code=$(curl -s -o response.json -w '%{http_code}' --max-time 120 -X POST \
+              -H "x-cron-secret: $CRON_SECRET" "$BACKEND_URL/api/jobs/due-reminders" || true)
+            echo "Intento $i: respondió $code $(cat response.json 2>/dev/null)"
+            case "$code" in
+              200) exit 0 ;;
+              401) echo "::error::CRON_SECRET no coincide con el del backend"; exit 1 ;;
+              404) echo "::error::Endpoint deshabilitado o backend sin desplegar (¿falta CRON_SECRET en Render?)"; exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::No se pudieron enviar los recordatorios"
+          exit 1
