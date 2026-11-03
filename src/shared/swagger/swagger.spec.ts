@@ -218,6 +218,20 @@ const spec = {
           404: { $ref: '#/components/responses/NotFound' },
         },
       },
+      delete: {
+        tags: ['Users'],
+        summary: 'Eliminar mi cuenta (derecho de cancelación)',
+        description:
+          'Borra el perfil, el historial del asistente, los avisos y la cuenta de Firebase Auth. ' +
+          'Saca al usuario de las actividades donde es miembro o invitado y deja sus tareas pendientes sin asignar. ' +
+          'Responde 409 si lidera actividades sin finalizar.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          204: { description: 'Cuenta eliminada' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          409: { description: 'Lidera actividades sin finalizar (LEADS_ACTIVE_ACTIVITIES)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
     },
     '/api/users/me/profile': {
       post: {
@@ -235,6 +249,7 @@ const spec = {
                   'backendSkill', 'frontendSkill', 'databaseSkill', 'testingSkill', 'documentationSkill', 'gitGithubSkill', 'agileMethodologiesSkill',
                   'teamworkSkill', 'communicationSkill', 'leadershipSkill', 'organizationSkill',
                   'projectsCompleted', 'availableHoursPerWeek', 'lastRole', 'lastRolePerformance', 'peerEvaluation',
+                  'privacyConsent',
                 ],
                 properties: {
                   fullName: { type: 'string', example: 'Juan Pérez' },
@@ -258,6 +273,12 @@ const spec = {
                   lastRole: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Último rol desempeñado en un proyecto grupal' },
                   lastRolePerformance: { type: 'integer', minimum: 1, maximum: 5, description: 'Autoevaluación de desempeño en ese último rol' },
                   peerEvaluation: { type: 'integer', minimum: 1, maximum: 5, description: 'Promedio de evaluaciones recibidas de compañeros' },
+                  privacyConsent: {
+                    type: 'object',
+                    description: 'Aceptación del aviso de privacidad (la fecha la fija el servidor)',
+                    required: ['accepted', 'version'],
+                    properties: { accepted: { type: 'boolean', enum: [true] }, version: { type: 'string', example: '1.0' } },
+                  },
                 },
               },
             },
@@ -265,12 +286,14 @@ const spec = {
         },
         responses: {
           201: { description: 'Perfil creado' },
+          400: { description: 'Datos inválidos, aviso de privacidad no aceptado (CONSENT_REQUIRED) o versión desactualizada (PRIVACY_POLICY_OUTDATED)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           401: { $ref: '#/components/responses/Unauthorized' },
         },
       },
       put: {
         tags: ['Users'],
         summary: 'Actualizar perfil (todos los campos opcionales)',
+        description: 'Responde 400 CONSENT_REQUIRED si el usuario no aceptó la versión vigente del aviso de privacidad. Para reaceptarlo se envía `privacyConsent`.',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -300,6 +323,12 @@ const spec = {
                   lastRole: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'], description: 'Último rol desempeñado en un proyecto grupal' },
                   lastRolePerformance: { type: 'integer', minimum: 1, maximum: 5, description: 'Autoevaluación de desempeño en ese último rol' },
                   peerEvaluation: { type: 'integer', minimum: 1, maximum: 5, description: 'Promedio de evaluaciones recibidas de compañeros' },
+                  privacyConsent: {
+                    type: 'object',
+                    description: 'Aceptación del aviso de privacidad (la fecha la fija el servidor)',
+                    required: ['accepted', 'version'],
+                    properties: { accepted: { type: 'boolean', enum: [true] }, version: { type: 'string', example: '1.0' } },
+                  },
                 },
               },
             },
@@ -307,6 +336,7 @@ const spec = {
         },
         responses: {
           200: { description: 'Perfil actualizado' },
+          400: { description: 'Datos inválidos o aviso de privacidad pendiente de aceptar (CONSENT_REQUIRED)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           401: { $ref: '#/components/responses/Unauthorized' },
         },
       },
@@ -484,7 +514,127 @@ const spec = {
         },
       },
     },
+    '/api/activities/{id}/tasks/redistribute/preview': {
+      post: {
+        tags: ['Tasks'],
+        summary: 'Propuesta de redistribución (solo líder, no guarda nada)',
+        description:
+          'Reparte las tareas elegidas entre los estudiantes elegidos equilibrando horas estimadas. ' +
+          'La carga previa de cada estudiante (incluidas sus tareas Entregadas/Verificadas) cuenta, ' +
+          'y dentro de eso se prefiere al mejor candidato según el servicio ML. ' +
+          'Las tareas completadas no se pueden redistribuir. Se confirma con PUT /tasks/assignments.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['taskIds', 'memberEmails'],
+                properties: {
+                  taskIds: { type: 'array', items: { type: 'string' } },
+                  memberEmails: { type: 'array', items: { type: 'string', format: 'email' } },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Asignaciones propuestas',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    assignments: {
+                      type: 'array',
+                      items: { type: 'object', properties: { taskId: { type: 'string' }, assignedToEmail: { type: 'string' } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/activities/{id}/tasks/assignments': {
+      put: {
+        tags: ['Tasks'],
+        summary: 'Asignar tareas a estudiantes concretos (solo líder)',
+        description:
+          'Asignación manual o confirmación de una redistribución. Las tareas que cambian de responsable ' +
+          'vuelven a Pendiente. Las tareas Entregadas/Verificadas no se pueden reasignar. ' +
+          'Se avisa a quien recibe y a quien pierde tareas.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['assignments'],
+                properties: {
+                  assignments: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: { taskId: { type: 'string' }, assignedToEmail: { type: 'string', nullable: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Asignaciones aplicadas' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
     '/api/activities/{id}/tasks/{taskId}': {
+      patch: {
+        tags: ['Tasks'],
+        summary: 'Editar la definición de una tarea (solo líder)',
+        description: 'Nombre, tipo, complejidad, prioridad u horas estimadas. El avance se edita con PUT.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }, { in: 'path', name: 'taskId', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  taskType: { type: 'string', enum: ['Backend', 'Frontend', 'Testing', 'Database', 'Documentation', 'Management'] },
+                  taskComplexity: { type: 'string', enum: ['Low', 'Medium', 'High'] },
+                  priority: { type: 'string', enum: ['Low', 'Medium', 'High'] },
+                  estimatedHours: { type: 'integer', minimum: 1, maximum: 100 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Tarea editada' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
       put: {
         tags: ['Tasks'],
         summary: 'Actualizar tarea (líder: cualquier campo; miembro: solo sus tareas, sin Verificado)',
@@ -580,6 +730,42 @@ const spec = {
         },
       },
     },
+    '/api/activities/{id}/leave': {
+      post: {
+        tags: ['Members'],
+        summary: 'Salir de la actividad (miembro)',
+        description: 'Sus tareas sin terminar quedan sin asignar y se avisa al líder. El líder no puede salir sin ceder el liderazgo.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Saliste de la actividad' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/activities/{id}/leader': {
+      post: {
+        tags: ['Members'],
+        summary: 'Ceder el liderazgo a un miembro aceptado (solo líder)',
+        description: 'El líder anterior pasa a ser miembro; las tareas no cambian de responsable.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object', required: ['email'], properties: { email: { type: 'string', format: 'email' } } } } },
+        },
+        responses: {
+          200: { description: 'Liderazgo transferido' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
     '/api/activities/{id}/members/{email}': {
       delete: {
         tags: ['Members'],
@@ -590,7 +776,7 @@ const spec = {
           { in: 'path', name: 'email', required: true, schema: { type: 'string' } },
         ],
         responses: {
-          200: { description: 'Miembro removido' },
+          200: { description: 'Miembro removido. Devuelve `unassignedTaskIds`: sus tareas no completadas, que quedan sin asignar.' },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
@@ -643,7 +829,62 @@ const spec = {
       },
     },
 
+    '/api/activities/{id}/invitations/{email}': {
+      delete: {
+        tags: ['Members'],
+        summary: 'Cancelar invitación pendiente (solo líder)',
+        description: 'Las tareas no completadas que tenía asignadas quedan sin asignar (`unassignedTaskIds`).',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }, { in: 'path', name: 'email', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Invitación cancelada' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/activities/{id}/invitations/{email}/resend': {
+      post: {
+        tags: ['Members'],
+        summary: 'Reenviar notificación de invitación (solo líder)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }, { in: 'path', name: 'email', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Invitación reenviada' },
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+
     // ── NOTIFICATIONS ─────────────────────────────────────────────────────
+    '/api/notifications/inbox': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Bandeja de avisos del usuario (últimos 50)',
+        description: 'Aceptaciones/rechazos, reasignaciones, entregas, recordatorios de fecha límite, etc.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Avisos ordenados del más reciente al más antiguo' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+        },
+      },
+    },
+    '/api/notifications/inbox/read': {
+      post: {
+        tags: ['Notifications'],
+        summary: 'Marcar todos los avisos como leídos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Avisos marcados como leídos' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+        },
+      },
+    },
     '/api/notifications': {
       get: {
         tags: ['Notifications'],

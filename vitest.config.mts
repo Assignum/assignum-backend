@@ -5,11 +5,12 @@ const config = defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['dotenv/config', './tests/support/agent.ts'],
     isolate: true,
-    env: {
-      DOTENV_CONFIG_PATH: 'config/.env.test',
-    },
+    include: ['tests/**/*.test.ts'],
+    setupFiles: ['./tests/security/setup-mocks.ts'],
+    // users.test.ts y tests/support|common vienen de la plantilla original del proyecto y
+    // apuntan a módulos que no existen; las pruebas reales están en tests/security.
+    exclude: ['tests/users.test.ts', 'node_modules/**'],
   },
   resolve: {
     alias: {

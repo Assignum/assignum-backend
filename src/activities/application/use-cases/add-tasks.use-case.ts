@@ -13,10 +13,6 @@ export const addTasks = async (
   uid: string,
   taskInputs: TaskInput[],
 ): Promise<ActivityTask[]> => {
-  const activity = await repo.findById(activityId);
-  if (!activity) throw new AppError('Activity not found', 404, 'NOT_FOUND');
-  if (activity.uid !== uid) throw new AppError('Only the leader can add tasks', 403, 'FORBIDDEN');
-
   const newTasks: ActivityTask[] = taskInputs.map((input) => ({
     id: uuidv4(),
     name: input.name,
@@ -31,7 +27,11 @@ export const addTasks = async (
     estimatedHours: input.estimatedHours,
   }));
 
-  const updatedTasks = [...activity.tasks, ...newTasks];
-  await repo.update(activityId, { tasks: updatedTasks });
+  await repo.mutate(activityId, (activity) => {
+    if (activity.uid !== uid) throw new AppError('Only the leader can add tasks', 403, 'FORBIDDEN');
+    if (activity.finalized) throw new AppError('Activity is already finalized', 400, 'ACTIVITY_FINALIZED');
+    return { changes: { tasks: [...activity.tasks, ...newTasks] }, result: undefined };
+  });
+
   return newTasks;
 };

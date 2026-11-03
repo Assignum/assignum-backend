@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { maskEmailsIn } from '../privacy/mask';
+
 import { AppError } from './app-error';
 
 export const errorHandler = (
@@ -16,6 +18,6 @@ export const errorHandler = (
     return;
   }
 
-  console.error('[Unhandled error]', err);
+  console.error('[Unhandled error]', maskEmailsIn(err.stack ?? String(err)));
   res.status(500).json({ error: 'Internal server error' });
 };

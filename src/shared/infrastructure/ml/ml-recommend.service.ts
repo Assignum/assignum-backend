@@ -3,7 +3,8 @@ import axios from 'axios';
 import { ActivityTask } from '@src/activities/domain/entities/activity.entity';
 import { UserProfile } from '@src/iam/domain/entities/user-profile.entity';
 
-const ML_URL = 'https://assignum-ml-service.onrender.com/recommend';
+// ML_SERVICE_URL permite apuntar a un servicio local (o a uno inexistente para probar la contingencia)
+const ML_URL = process.env.ML_SERVICE_URL ?? 'https://assignum-ml-service.onrender.com/recommend';
 
 interface MlResponse {
   recommended_student: string;
@@ -11,8 +12,12 @@ interface MlResponse {
   ranking: Array<{ name: string; success_probability: number; prediction: string; rank: number }>;
 }
 
-const toMlStudent = (email: string, profile: UserProfile | null) => ({
-  name: email,
+/**
+ * El servicio ML solo recibe el vector de características. En lugar del correo cada estudiante
+ * va con un alias por petición (`s1`, `s2`, …) que se traduce de vuelta al recibir el ranking.
+ */
+const toMlStudent = (alias: string, profile: UserProfile | null) => ({
+  name: alias,
   backendSkill: profile?.backendSkill || 1,
   frontendSkill: profile?.frontendSkill || 1,
   databaseSkill: profile?.databaseSkill || 1,
@@ -42,7 +47,8 @@ export const getRanking = async (
   task: Pick<ActivityTask, 'taskType' | 'taskComplexity' | 'priority' | 'estimatedHours'>,
   memberProfiles: Array<{ email: string; profile: UserProfile | null }>,
 ): Promise<MlRankingEntry[]> => {
-  const students = memberProfiles.map(({ email, profile }) => toMlStudent(email, profile));
+  const aliasToEmail = new Map(memberProfiles.map(({ email }, i) => [`s${i + 1}`, email]));
+  const students = [...aliasToEmail].map(([alias], i) => toMlStudent(alias, memberProfiles[i].profile));
 
   const res = await axios.post<MlResponse>(ML_URL, {
     task: {
@@ -54,5 +60,7 @@ export const getRanking = async (
     students,
   });
 
-  return res.data.ranking;
+  return res.data.ranking
+    .filter((entry) => aliasToEmail.has(entry.name))
+    .map((entry) => ({ ...entry, name: aliasToEmail.get(entry.name)! }));
 };

@@ -1,4 +1,5 @@
 import { auth, db } from '@src/shared/infrastructure/firebase/firebase-admin';
+import { INBOX_COLLECTION } from '@src/shared/infrastructure/notifications/notify.service';
 
 import { PartialUserProfile, UserProfile } from '../../domain/entities/user-profile.entity';
 import { IUserProfileRepository } from '../../domain/repositories/user-profile.repository';
@@ -34,5 +35,18 @@ export class FirestoreUserProfileRepository implements IUserProfileRepository {
 
   async merge(uid: string, data: PartialUserProfile): Promise<void> {
     await this.collection.doc(uid).set(data, { merge: true });
+  }
+
+  async deleteAccount(uid: string, email: string): Promise<void> {
+    // recursiveDelete también borra la subcolección chatHistory
+    await db.recursiveDelete(this.collection.doc(uid));
+
+    const inbox = await db.collection(INBOX_COLLECTION).where('recipientEmail', '==', email).get();
+    const writer = db.bulkWriter();
+    inbox.docs.forEach((d) => writer.delete(d.ref));
+    await writer.close();
+
+    // Al final: si algo de lo anterior falla, el usuario aún puede iniciar sesión y reintentar
+    await auth.deleteUser(uid);
   }
 }

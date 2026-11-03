@@ -24,7 +24,7 @@ export class FirestoreDashboardRepository implements IDashboardRepository {
     for (const activity of allActivities) {
       const tasks = (activity.tasks ?? []) as Array<{ assignedToEmail: string; status: string }>;
       pendingTasks += tasks.filter(
-        (t) => t.assignedToEmail === email && t.status === 'Pendiente',
+        (t) => t.assignedToEmail === email && (t.status === 'Pendiente' || t.status === 'En Progreso'),
       ).length;
 
       const dueDate = new Date(activity.dueDate as string);

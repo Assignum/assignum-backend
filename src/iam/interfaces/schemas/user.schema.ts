@@ -10,6 +10,11 @@ const lastRoleEnum = z.enum([
 ]);
 const skill = () => z.number().int().min(1).max(5);
 
+const privacyConsentSchema = z.object({
+  accepted: z.literal(true, { errorMap: () => ({ message: 'The privacy policy must be accepted' }) }),
+  version: z.string().min(1),
+});
+
 export const createProfileSchema = z.object({
   fullName: z.string().min(1, 'fullName is required'),
   birthDate: z.string().nullable().optional(),
@@ -32,6 +37,9 @@ export const createProfileSchema = z.object({
   lastRole: lastRoleEnum,
   lastRolePerformance: skill(),
   peerEvaluation: skill(),
+  // Aceptación del aviso de privacidad: obligatoria al crear el perfil y al reaceptar una
+  // versión nueva del aviso.
+  privacyConsent: privacyConsentSchema,
 });
 
 export const updateProfileSchema = createProfileSchema.partial();

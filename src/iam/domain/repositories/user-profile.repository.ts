@@ -6,4 +6,6 @@ export interface IUserProfileRepository {
   createEmpty(uid: string, email: string): Promise<void>;
   save(uid: string, data: PartialUserProfile & { email?: string }): Promise<void>;
   merge(uid: string, data: PartialUserProfile): Promise<void>;
+  /** Borra el perfil (con su historial de chat), sus avisos y la cuenta de Firebase Auth. */
+  deleteAccount(uid: string, email: string): Promise<void>;
 }

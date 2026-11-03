@@ -2,32 +2,31 @@ import { getRanking } from '@src/shared/infrastructure/ml/ml-recommend.service';
 import { IUserProfileRepository } from '@src/iam/domain/repositories/user-profile.repository';
 import { AppError } from '@src/shared/errors/app-error';
 
-import { ActivityTask } from '../../domain/entities/activity.entity';
+import { AssignmentMode, isCompleted } from '../../domain/entities/activity.entity';
 import { IActivityRepository } from '../../domain/repositories/activity.repository';
+import { fetchMemberProfiles } from '../services/balanced-assignment';
 
+/**
+ * Reparto inicial ("Dividir tareas"). Para repartir de nuevo tareas concretas entre
+ * estudiantes concretos se usa `previewRedistribution` + `applyAssignments`.
+ */
 export const assignTasks = async (
   repo: IActivityRepository,
   profileRepo: IUserProfileRepository,
   activityId: string,
   uid: string,
   leaderEmail: string,
-): Promise<void> => {
+): Promise<Extract<AssignmentMode, 'ml' | 'fallback'>> => {
   const activity = await repo.findById(activityId);
   if (!activity) throw new AppError('Activity not found', 404, 'NOT_FOUND');
   if (activity.uid !== uid) throw new AppError('Only the leader can assign tasks', 403, 'FORBIDDEN');
+  if (activity.finalized) throw new AppError('Activity is already finalized', 400, 'ACTIVITY_FINALIZED');
   if (activity.tasks.length === 0) throw new AppError('No tasks to assign', 400, 'NO_TASKS');
 
   const allEmails = [leaderEmail, ...activity.acceptedEmails, ...activity.invitedEmails];
   const protectedSet = new Set([leaderEmail, ...activity.acceptedEmails]);
 
-  // Fetch all member profiles in parallel
-  const memberProfiles = await Promise.all(
-    allEmails.map(async (email) => {
-      const record = await profileRepo.findByEmail(email);
-      const profile = record ? await profileRepo.findByUid(record.uid) : null;
-      return { email, profile };
-    }),
-  );
+  const memberProfiles = await fetchMemberProfiles(profileRepo, allEmails);
 
   // Cupo justo por persona: cada uno recibe como máximo ceil(tareas / miembros)
   const unprotectedTasks = activity.tasks.filter(
@@ -38,15 +37,11 @@ export const assignTasks = async (
 
   // Fallback round-robin index
   let fallbackIndex = 0;
+  let usedFallback = false;
 
-  const updatedTasks: ActivityTask[] = [];
+  const proposals = new Map<string, string>();
 
-  for (const task of activity.tasks) {
-    if (task.assignedToEmail && protectedSet.has(task.assignedToEmail)) {
-      updatedTasks.push(task);
-      continue;
-    }
-
+  for (const task of unprotectedTasks) {
     try {
       const ranking = await getRanking(task, memberProfiles);
 
@@ -67,14 +62,29 @@ export const assignTasks = async (
         assignedCount.set(assigned, (assignedCount.get(assigned) ?? 0) + 1);
       }
 
-      updatedTasks.push({ ...task, assignedToEmail: assigned });
+      proposals.set(task.id, assigned);
     } catch {
       // Fallback a round-robin si el ML no responde
-      const assignedEmail = allEmails[fallbackIndex % allEmails.length];
+      proposals.set(task.id, allEmails[fallbackIndex % allEmails.length]);
       fallbackIndex++;
-      updatedTasks.push({ ...task, assignedToEmail: assignedEmail });
+      usedFallback = true;
     }
   }
 
-  await repo.update(activityId, { tasks: updatedTasks });
+  // Las llamadas al ML tardan: se aplica en una transacción sobre la versión actual del
+  // documento para no pisar cambios hechos mientras tanto.
+  await repo.mutate(activityId, (current) => ({
+    changes: {
+      tasks: current.tasks.map((t) => {
+        const email = proposals.get(t.id);
+        return email && !isCompleted(t) ? { ...t, assignedToEmail: email } : t;
+      }),
+      // Queda registrado para que la app avise al líder que el reparto se hizo sin ML
+      assignmentMode: usedFallback ? 'fallback' : 'ml',
+      assignmentModeAt: new Date().toISOString(),
+    },
+    result: undefined,
+  }));
+
+  return usedFallback ? 'fallback' : 'ml';
 };

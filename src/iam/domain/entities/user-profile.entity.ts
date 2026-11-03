@@ -30,6 +30,9 @@ export interface UserProfile {
   lastRole: LastRole;
   lastRolePerformance: number;
   peerEvaluation: number;
+  // Consentimiento del aviso de privacidad (ver privacy-policy.ts)
+  consentAcceptedAt?: string | null;
+  privacyPolicyVersion?: string | null;
 }
 
 export type PartialUserProfile = Partial<Omit<UserProfile, 'uid' | 'email'>>;

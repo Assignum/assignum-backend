@@ -9,7 +9,11 @@
     "type-check": "tsc -b --noEmit",
     "clu:build": "node scripts/clu/build-project.js",
     "clu:deploy": "node scripts/clu/deploy.js",
-    "clu:test": "node scripts/clu/test.js"
+    "clu:test": "node scripts/clu/test.js",
+    "test": "vitest run",
+    "rules:validate": "node scripts/firestore/rules.js validate",
+    "rules:backup": "node scripts/firestore/rules.js backup",
+    "rules:deploy": "node scripts/firestore/rules.js deploy"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -44,6 +48,7 @@
     "shx": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   }
 }

@@ -24,3 +24,31 @@ export const updateTaskSchema = z.object({
   files: z.array(z.string()).optional(),
   links: z.array(z.string()).optional(),
 });
+
+export const editTaskSchema = z
+  .object({
+    name: z.string().trim().min(1).optional(),
+    taskType: taskTypeEnum.optional(),
+    taskComplexity: taskComplexityEnum.optional(),
+    priority: taskPriorityEnum.optional(),
+    estimatedHours: z.number().int().min(1).max(100).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+export const redistributionPreviewSchema = z.object({
+  taskIds: z.array(z.string().min(1)).min(1, 'Select at least one task'),
+  memberEmails: z.array(z.string().email()).min(1, 'Select at least one member'),
+});
+
+export const applyAssignmentsSchema = z.object({
+  assignments: z
+    .array(
+      z.object({
+        taskId: z.string().min(1),
+        assignedToEmail: z.string().email().nullable(),
+      }),
+    )
+    .min(1, 'At least one assignment required'),
+  /** Modo que devolvió la vista previa ('ml' o 'fallback'); si se omite, es un cambio manual. */
+  assignmentMode: z.enum(['ml', 'fallback', 'manual']).optional(),
+});
