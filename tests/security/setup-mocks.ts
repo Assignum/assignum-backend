@@ -7,4 +7,4 @@ vi.mock('@src/shared/infrastructure/notifications/notify.service', () => ({
   notifyEmail: vi.fn(),
   notifyUid: vi.fn(),
 }));
-vi.mock('@src/shared/infrastructure/ml/ml-recommend.service', () => ({ getRanking: vi.fn() }));
+vi.mock('@src/shared/infrastructure/ml/ml-recommend.service', () => ({ getRanking: vi.fn(), warmUpMl: vi.fn() }));

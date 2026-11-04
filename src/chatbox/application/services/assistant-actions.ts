@@ -36,6 +36,26 @@ const normalize = (value: string): string =>
 const entityText = (entities: CluEntity[], category: string): string | undefined =>
   entities.find((e) => e.category === category)?.text.trim() || undefined;
 
+/**
+ * CLU suele cortar los nombres largos ("crear indices para las consultas…" → "crear indices").
+ * Se toma el texto del mensaje desde donde empieza el nombre detectado hasta la actividad
+ * (o el final), quitando el conector "a"/"en"/"para"; si no se encuentra, queda el de CLU.
+ */
+export const fullTaskName = (message: string, taskName: string, activityName?: string): string => {
+  const lower = message.toLowerCase();
+  const start = lower.indexOf(taskName.toLowerCase());
+  if (start < 0) return taskName;
+  const activityAt = activityName ? lower.lastIndexOf(activityName.toLowerCase()) : -1;
+  const end = activityAt > start ? activityAt : message.length;
+  const span = message
+    .slice(start, end)
+    .trim()
+    .replace(/\s+(a|en|para)$/i, '')
+    .replace(/[.?!]+$/, '')
+    .trim();
+  return span.length >= taskName.length ? span : taskName;
+};
+
 const listNames = (activities: Activity[]): string => activities.map((a) => `"${a.name}"`).join(', ');
 
 /** Exact match first, then partial match in either direction ("física" ~ "Proyecto de Física"). */
@@ -114,14 +134,15 @@ const createTask: ActionHandler = async (ctx, entities, message) => {
     return 'Si quieres que cree una tarea, pídemelo así: "agrega la tarea hacer diapositivas a Proyecto de Física".';
   }
 
-  const taskName = entityText(entities, 'NombreTarea');
-  if (!taskName) {
+  const cluTaskName = entityText(entities, 'NombreTarea');
+  if (!cluTaskName) {
     return 'No entendí el nombre de la tarea. Escríbelo así: "agrega la tarea hacer diapositivas a Proyecto de Física".';
   }
 
   const activities = await getActiveActivities(ctx);
   const led = activities.filter((a) => a.uid === ctx.uid);
   const activityName = entityText(entities, 'NombreActividad');
+  const taskName = fullTaskName(message, cluTaskName, activityName);
 
   let target: Activity;
   if (!activityName) {

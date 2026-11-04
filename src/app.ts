@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 
 import { errorHandler } from './shared/errors/error-handler';
+import { warmUpMl } from './shared/infrastructure/ml/ml-recommend.service';
 import { maskEmailsIn } from './shared/privacy/mask';
 import swaggerSpec from './shared/swagger/swagger.spec';
 import authRouter from './iam/interfaces/routers/auth.router';
@@ -32,6 +33,13 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Cualquier uso de la app despierta al ML (con límite de frecuencia). /health queda fuera para
+// que el cron horario no mantenga el ML encendido sin nadie usando la app.
+app.use('/api', (_req, _res, next) => {
+  warmUpMl();
+  next();
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
